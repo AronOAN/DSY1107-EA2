@@ -28,6 +28,14 @@ public class LogProducerController {
  );
  return "Log enviado: " + logMessage.getMessage();
  }
+
+ @PostMapping ("/log/advanced")
+ public String sendLogAdvanced(@RequestBody LogMessageDto logMessage) {
+ rabbitTemplate.convertAndSend(
+ RabbitQueuesConfig.EXCHANGE_NAME, logMessage.getLevel(), logMessage.getFullMessage()
+ );   
+    return "Log avanzado enviado: " + logMessage.getFullMessage();
+ }  
  
  // DTO para el cuerpo de la petición en los DTO
 
