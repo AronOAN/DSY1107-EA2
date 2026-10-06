@@ -5,6 +5,8 @@ import java.time.format.DateTimeFormatter;
 
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.rabbitmq.client.Channel;
@@ -19,6 +21,10 @@ import com.rabqueues.config.RabbitQueuesConfig;
  */
 @Component
 public class Receiver {
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
     /**
      * Este método se ejecuta automáticamente cada vez que
      * llega un mensaje a la cola 'hello'
@@ -52,7 +58,7 @@ public class Receiver {
     complejo
     * (Este es un ejemplo avanzado)
     */
-    @RabbitListener(queues = RabbitQueuesConfig.EXCHANGE_NAME)
+    @RabbitListener(queues = RabbitQueuesConfig.ALL_LOGS_QUEUE)
     public void receiveMessageAdvanced(String message,Message rawMessage, Channel channel)
     throws Exception {
     try {
@@ -73,6 +79,8 @@ public class Receiver {
     throw e;
     }
     }
+
+    
 
 
 }

@@ -8,27 +8,106 @@ function App() {
   const [count, setCount] = useState(0)
 
 
-  const sendLog = async (level, message) => {
-    const backendUrl = 'http://localhost:8082/log';
+  const sendEmail = async (to, subject, body) => {
+    // URL de tu controlador en Spring Boot
+    const backendUrl = 'http://localhost:8082/api/v1/emails';
+    
     try {
-    const response = await fetch(backendUrl, {
-          method: 'POST',
-      headers: {
-      'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ level, message }),
+      const response = await fetch(backendUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Ya no necesitas la cabecera 'Authorization' con guest:guest aquí
+        },
+        // Envías el objeto JSON limpio. Spring lo mapeará automáticamente a tu EmailPayload en Java
+        body: JSON.stringify({ to, subject, body }), 
       });
+
       if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      // Como tu backend responde con ResponseEntity.ok("..."), leemos la respuesta como texto plano
+      const result = await response.text();
+      console.log("Respuesta del backend:", result);
+      
+      alert(`Email enviado a la cola para '${to}'!`);
+
+    } catch (error) {
+      console.error("Error al enviar el email a Spring Boot:", error);
+      alert("Error al enviar el email. Revisa la consola.");
+    }
+  };
+
+
+ /* const sendEmail = async (to, subject, body) => {
+    // Tu API de Spring Boot actúa como puente seguro hacia RabbitMQ
+    const backendUrl = 'http://localhost:8082/api/v1/emails'; 
+    
+    try {
+      const response = await fetch(backendUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ to, subject, body }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const result = await response.text();
       console.log(result);
-      alert(`Log '${level}' enviado!`);
-      } catch (error) {
-      console.error("Error al enviar el log:", error);
-      alert("Error al enviar el log. Revisa la consola.");
+      alert(`Email para '${to}' encolado correctamente!`);
+    } catch (error) {
+      console.error("Error al enviar el email:", error);
+      alert("Error al enviar el email. Revisa la consola.");
+    }
+  };*/
+
+  /*const sendEmail = async (to, subject, body) => {
+    // URL de la API de RabbitMQ para publicar mensajes directamente en un Exchange
+    const backendUrl = 'http://localhost:8082/api/v1/emails';
+    
+    try {
+      const response = await fetch(backendUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Credenciales por defecto (guest:guest) codificadas en Base64. Cambiar en producción.
+          'Authorization': 'Basic ' + btoa('guest:guest') 
+        },
+        body: JSON.stringify({
+          properties: {
+            delivery_mode: 2, // Mensaje persistente
+            content_type: "application/json"
+          },
+          routing_key: "emailRoutingKey", // Tu clave de enrutamiento
+          payload: JSON.stringify({ to, subject, body }), // El contenido real del email
+          payload_encoding: "string"
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
+
+      const result = await response.json();
+      
+      if (result.routed) {
+        console.log("Mensaje recibido por RabbitMQ:", result);
+        alert(`Email enviado a la cola para '${to}'!`);
+      } else {
+        throw new Error("El mensaje llegó a RabbitMQ pero no se pudo enrutar a ninguna cola.");
+      }
+
+    } catch (error) {
+      console.error("Error al publicar en RabbitMQ:", error);
+      alert("Error al enviar el email. Revisa la consola.");
+    }
+  };*/
+
 
         const styles = {
       container: {
@@ -54,13 +133,16 @@ function App() {
       },
     };
 
-
+      // 1. Defines los estados al inicio de tu componente
+    const [emailTo, setEmailTo] = useState('');
+    const [emailSubject, setEmailSubject] = useState('');
+    const [emailBody, setEmailBody] = useState('');
   return (
     <>
       <section id="center">
         <div className="App">
           <h1>Sistema de Logging RabbitMQ</h1>
-
+          <br />
           <div style={styles.fixToText} className="button-container">
             <button 
               type="button" 
@@ -88,7 +170,33 @@ function App() {
             >
               Enviar Log ERROR
             </button>
+
+
+
           </div>
+             <h1></h1>
+             <br />
+            <div>
+          <h1>Sistema de Envio Email y encolado del Email</h1>
+          <br />
+            <div>
+              
+              <input type="email" placeholder="Para:" onChange={(e) => setEmailTo(e.target.value)} />
+              <br />
+              <input type="text" placeholder="Asunto:" onChange={(e) => setEmailSubject(e.target.value)} />
+              <br />
+              <textarea placeholder="Mensaje:" onChange={(e) => setEmailBody(e.target.value)} />
+                <br />
+              <button 
+                type="button" 
+                style={styles.blueButton} 
+                onClick={() => sendEmail(emailTo, emailSubject, emailBody)}
+              >
+                Enviar Email Personalizado
+              </button>
+            </div>
+
+            </div>
         </div>
 
         <button
